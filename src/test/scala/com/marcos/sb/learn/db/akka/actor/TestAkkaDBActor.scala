@@ -5,7 +5,7 @@ import org.scalatest.{FunSuite, BeforeAndAfterEach, Matchers}
 import akka.actor.ActorSystem
 import akka.testkit.TestActorRef
 
-class TestAkkaDB extends FunSuite
+class TestAkkaDBActor extends FunSuite
   with Matchers
   with BeforeAndAfterEach {
 

@@ -5,7 +5,7 @@ import akka.event.Logging
 import com.marcos.sb.learn.db.akka.message.SetRequest
 import scala.collection.mutable
 
-class AkkaDB extends Actor {
+class AkkaDBActor extends Actor {
   val map = new mutable.HashMap[String, Any]
   val log = Logging(context.system, this)
 
