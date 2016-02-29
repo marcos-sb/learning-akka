@@ -12,7 +12,7 @@ class TestAkkaDBActor extends FunSuite
   implicit val system = ActorSystem()
 
   test("Place key/value into map") {
-    val actorRef = TestActorRef(new AkkaDB)
+    val actorRef = TestActorRef(new AkkaDBActor)
     actorRef ! SetRequest("key", "value")
     val akkaDbActor = actorRef.underlyingActor
 
