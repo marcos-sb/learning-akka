@@ -1,5 +1,6 @@
-package com.marcos.sb.learn.db.akka
+package com.marcos.sb.learn.db.akka.actor
 
+import com.marcos.sb.learn.db.akka.AkkaDBActor
 import com.marcos.sb.learn.db.akka.message.SetRequest
 import org.scalatest.{FunSuite, BeforeAndAfterEach, Matchers}
 import akka.actor.ActorSystem
