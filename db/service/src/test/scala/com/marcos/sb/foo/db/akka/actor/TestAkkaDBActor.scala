@@ -1,10 +1,9 @@
-package com.marcos.sb.learn.db.akka.actor
+package com.marcos.sb.foo.db.akka.actor
 
-import com.marcos.sb.learn.db.akka.AkkaDBActor
-import com.marcos.sb.learn.db.akka.message.SetRequest
-import org.scalatest.{FunSuite, BeforeAndAfterEach, Matchers}
 import akka.actor.ActorSystem
 import akka.testkit.TestActorRef
+import com.marcos.sb.foo.db.akka.message.Messages.SetRequest
+import org.scalatest.{BeforeAndAfterEach, FunSuite, Matchers}
 
 class TestAkkaDBActor extends FunSuite
   with Matchers

@@ -1,4 +1,4 @@
-package com.marcos.sb.learn.db.akka.actor
+package com.marcos.sb.foo.db.akka.actor
 
 import org.scalatest.{FunSuite, BeforeAndAfterEach, Matchers}
 import akka.actor.ActorSystem
