@@ -1,4 +1,4 @@
-name := "akka-db"
+name := "akka-db-service"
 
 version := "0.0.1-SNAPSHOT"
 organization := "com.marcos-sb"

@@ -6,9 +6,11 @@ import com.marcos.sb.foo.db.akka.exception.KeyNotFoundException
 import com.marcos.sb.foo.db.akka.message.Messages._
 import scala.collection.mutable
 
-class AkkaDBActor extends Actor {
-  val map = new mutable.HashMap[String, Any]
-  val log = Logging(context.system, this)
+final class AkkaDBActor extends Actor {
+  private val map_ = new mutable.HashMap[String, Any]
+  private val log = Logging(context.system, this)
+
+  def map = map_
 
   override def receive = {
     case SetRequest(key, value) =>
@@ -31,5 +33,5 @@ class AkkaDBActor extends Actor {
 
 object Main extends App {
   val system = ActorSystem("db")
-  val actor = system.actorOf(Props[AkkaDBActor], name = "db-actor")
+  val actor = system.actorOf(Props[AkkaDBActor], name = "service")
 }
