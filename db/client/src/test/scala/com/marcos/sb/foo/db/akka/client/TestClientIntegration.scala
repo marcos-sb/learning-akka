@@ -14,7 +14,7 @@ final class TestClientIntegration extends FunSuite with Matchers {
     val expected = 123
     val output = Await.result(client.get("123"), 10.seconds)
 
-    output shouldEqual 123
+    output shouldEqual expected
   }
 
 }

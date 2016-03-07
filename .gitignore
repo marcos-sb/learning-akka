@@ -1,5 +1,8 @@
 *.class
 *.log
+*.jar
+*.bat
+activator
 
 # sbt specific
 .cache
@@ -16,3 +19,4 @@ project/plugins/project/
 .scala_dependencies
 .worksheet
 project
+.DS_Store
