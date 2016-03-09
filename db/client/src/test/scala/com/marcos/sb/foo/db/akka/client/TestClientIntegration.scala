@@ -7,7 +7,7 @@ import scala.concurrent.duration._
 
 final class TestClientIntegration extends FunSuite with Matchers {
 
-  test("set a value") {
+  test("Set a value") {
     val client = new Client("127.0.0.1:2552")
     client.set("123", 123)
 

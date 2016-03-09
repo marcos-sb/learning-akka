@@ -13,7 +13,7 @@ final class AkkaDBActor extends Actor {
 
   override def receive = {
     case SetRequest(key, value) =>
-      log.info(s"received SetRequest - key: $key value: $value")
+      log.info(s"received SetRequest - key: $key, value: $value")
       map += (key -> value)
       sender() ! Status.Success
 
@@ -23,6 +23,16 @@ final class AkkaDBActor extends Actor {
         case Some(v) => sender() ! v
         case None => sender() ! Status.Failure(new KeyNotFoundException(key))
       }
+
+    case SetIfNotFound(key,value) =>
+      log.info(s"received SetIfNotFound - key: $key, value: $value")
+      if(!map_.contains(key)) map += (key -> value)
+      sender() ! Status.Success
+
+    case Delete(key) =>
+      log.info(s"received Delete - key: $key")
+      map_ -= key
+      sender() ! Status.Success
 
     case o =>
       log.info(s"received unknown message: $o");
