@@ -2,7 +2,6 @@ package com.marcos.sb.foo.db.akka.actor
 
 import akka.actor.{Props, ActorSystem, Actor, Status}
 import akka.event.Logging
-import com.marcos.sb.foo.db.akka.exception.KeyNotFoundException
 import com.marcos.sb.foo.db.akka.message.Messages._
 import scala.collection.mutable
 

@@ -7,10 +7,13 @@ import com.marcos.sb.foo.akka.reverse.actor.ReverseStringActor._
 
 import scala.concurrent.duration._
 
+object ReverseStringClient {
+  private implicit val system = ActorSystem("client")
+}
+
 final class ReverseStringClient(private val remoteAddr: String) {
   private implicit val timeout = Timeout (2.seconds)
-  private val system = ActorSystem("client")
-  private val remote = system.actorSelection(s"akka.tcp://reverse@$remoteAddr/user/endpoint1")
+  private val remote = ReverseStringClient.system.actorSelection(s"akka.tcp://reverse@$remoteAddr/user/endpoint1")
 
   def rev(s: String) = {
     remote ? RequestReverse(s)

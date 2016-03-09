@@ -16,4 +16,14 @@ final class TestReverseStringClientIntegration extends FunSuite with Matchers {
     output shouldEqual expected
   }
 
+  test("rev - message list") {
+    val input = Seq("foobar","admin","root")
+    val expected = Seq("raboof","nimda", "toor")
+
+    val revClient = new ReverseStringClient("127.0.0.1:2660")
+    val output = for(in <- input) yield Await.result(revClient.rev(in), 10.seconds)
+
+    output shouldEqual expected
+  }
+
 }
