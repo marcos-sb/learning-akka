@@ -108,4 +108,47 @@ final class TestFeederActor extends FunSpec with Matchers {
       parsedArticle.toString should not include("<body>")
     }
   }
+
+
+  describe("pipe tests") {
+    val cacheProbe = TestProbe()
+    val httpClientProbe = TestProbe()
+    val articleParseActor = system.actorOf(Props[ParserActor])
+    val tellFeederActor = system.actorOf(Props(classOf[TellFeederActor],
+      cacheProbe.ref.path.toString,
+      httpClientProbe.ref.path.toString,
+      articleParseActor.path.toString,
+      timeout
+    ))
+
+    it("should provide parsed article") {
+      val f = tellFeederActor ? ParseArticle("http://www.google.com")
+
+       //Cache gets the message first. Fail cache request.
+       cacheProbe.expectMsgType[GetRequest]
+       cacheProbe.reply(Failure(new Exception("no cache")))
+
+       //if it fails, http client gets a request
+       httpClientProbe.expectMsgType[GetRequest]
+       httpClientProbe.reply(HttpResponse(ArticleTests.article1))
+
+       cacheProbe.expectMsgType[SetRequest] //Article will be cached.
+
+       val parsedArticle = Await.result(f, 10 seconds)
+       parsedArticle.toString should include("I’ve been writing a lot in emacs lately")
+       parsedArticle.toString should not include("<body>")
+    }
+
+    it("should provide cached article") {
+      val f = tellFeederActor ? ParseArticle("http://www.google.com")
+
+      //Cache gets the message first. Fail cache request.
+      cacheProbe.expectMsgType[GetRequest]
+      cacheProbe.reply(de.l3s.boilerpipe.extractors.ArticleExtractor.INSTANCE.getText(ArticleTests.article1))
+
+      val parsedArticle = Await.result(f, 10 seconds)
+      parsedArticle.toString should include("I’ve been writing a lot in emacs lately")
+      parsedArticle.toString should not include("<body>")
+    }
+  }
 }
