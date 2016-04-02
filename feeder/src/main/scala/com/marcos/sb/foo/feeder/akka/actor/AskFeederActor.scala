@@ -1,4 +1,4 @@
-package com.marcos.sb.foo.feeder.akka.actor
+  package com.marcos.sb.foo.feeder.akka.actor
 
 import akka.actor.Actor
 import akka.util.Timeout

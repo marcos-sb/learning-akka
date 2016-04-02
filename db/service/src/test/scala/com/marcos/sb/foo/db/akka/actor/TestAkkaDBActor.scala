@@ -1,7 +1,7 @@
 package com.marcos.sb.foo.db.akka.actor
 
 import akka.actor.ActorSystem
-import akka.testkit.TestActorRef
+import akka.testkit.{TestActorRef, TestProbe}
 import akka.util.Timeout
 import akka.pattern.ask
 import com.marcos.sb.foo.db.akka.message.Messages._
@@ -80,5 +80,14 @@ class TestAkkaDBActor extends FunSuite
     val output = uActor.map.get("key")
 
     output shouldEqual None
+  }
+
+  test("Ping and Connect") {
+    val actorRef = TestActorRef(new AkkaDBActor)
+    val clientProbe = TestProbe()
+
+    actorRef.receive(Ping, clientProbe.testActor)
+
+    clientProbe.expectMsgType[Connect.type]
   }
 }
