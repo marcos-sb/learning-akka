@@ -2,7 +2,7 @@ package com.marcos.sb.foo.db.akka.client
 
 import org.scalatest.{FunSpec, Matchers}
 import akka.testkit.TestProbe
-import akka.actor.{ActorSystem, Status}
+import akka.actor.{Identify, ActorIdentity, ActorSystem, Status}
 import scala.concurrent.Await
 import scala.concurrent.duration._
 import com.marcos.sb.foo.db.akka.message.Messages._
@@ -11,73 +11,58 @@ final class TestClientIntegration extends FunSpec with Matchers {
 
   implicit val system = ActorSystem("test")
 
-  describe("Client offline tests") {
+  describe("Client tests") {
     val dbService = TestProbe()
     val client = new Client(dbService.ref.path.toString)
 
-    it("should produce IllegalStateException on set - no connection") {
+    it("should set a value") {
+      val res = client.set("123", 123)
+      dbService.expectMsgType[SetRequest]
+      dbService.reply(Status.Success)
+      val output = Await.result(res, 10.seconds)
+
+      output shouldEqual Status.Success
+    }
+
+    it("should not set a value") {
       intercept[IllegalStateException] {
-        client.set("123", 123)
+        val res = new Client("xxx").set("123", 123)
+        val output = Await.result(res, 10.seconds)
       }
     }
 
-    it("should produce IllegalStateException on get - no connection") {
+    it("should get a value") {
+      val res = client.get("123")
+      dbService.expectMsgType[GetRequest]
+      dbService.reply(123)
+      val output = Await.result(res, 10.seconds)
+
+      output shouldEqual 123
+    }
+
+    it("should not get a value") {
       intercept[IllegalStateException] {
-        client.get("123")
+        val res = new Client("xxxx").get("123")
+        val output = Await.result(res, 10.seconds)
       }
     }
+
   }
 
   describe("Client connect test") {
     val dbService = TestProbe()
     val client = new Client(dbService.ref.path.toString)
 
-    it("should not establish a connection - stay offline") {
-      val output = client.connect()
-
-      dbService.expectMsgType[Ping.type]
-      dbService.reply("elgoog")
-
-      val online = Await.result(output, 10.seconds)
+    it("should stay offline - no response from endpoint") {
+      val online = Await.result(new Client("xxx").online, 10.seconds)
 
       online shouldEqual false
     }
 
-    it("should establish a connection - become online") {
-      val output = client.connect()
-
-      dbService.expectMsgType[Ping.type]
-      dbService.reply(Connect)
-
-      val online = Await.result(output, 10.seconds)
+    it("should find an endpoint") {
+      val online = Await.result(client.online, 10.seconds)
 
       online shouldEqual true
-    }
-  }
-
-  describe("Client method test") {
-    val dbService = TestProbe()
-    val client = new Client(dbService.ref.path.toString)
-
-    val online = client.connect()
-    dbService.expectMsgType[Ping.type]
-    dbService.reply(Connect)
-    Await.result(online, 10.seconds) //ensure online status
-
-    it("Should set/get a value") {
-      client.set("123", 123)
-      dbService.expectMsgType[SetRequest]
-      dbService.reply(Status.Success)
-
-      val outputF = client.get("123")
-
-      dbService.expectMsgType[GetRequest]
-      dbService.reply(123)
-
-      val expected = 123
-      val output = Await.result(outputF, 10.seconds)
-
-      output shouldEqual expected
     }
   }
 }
