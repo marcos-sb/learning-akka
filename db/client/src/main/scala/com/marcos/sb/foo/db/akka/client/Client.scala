@@ -32,22 +32,34 @@ final class Client(private val remoteAddr: String)(implicit val system: ActorSys
     override def receive = {
       case ActorIdentity(`identityId`, Some(ref)) =>
         endpointActorRef = Some(ref)
+        context.become(online)
 
       case ActorIdentity(`identityId`, None) =>
         endpointActorRef = None
 
       case ReqOnline =>
-        sender() ! (if(endpointActorRef.nonEmpty) Online else Offline)
+        sender() ! Offline
 
-      case m @ SetRequest(key, value) =>
-        if(endpointActorRef.isEmpty)
-          sender() ! Status.Failure(new IllegalStateException("endpoint offline"))
-        else endpointActorRef.foreach(_.forward(m))
+      case SetRequest(_, _) =>
+        sender() ! Status.Failure(new IllegalStateException("endpoint offline"))
 
-      case m @ GetRequest(key) =>
-        if(endpointActorRef.isEmpty)
-          sender() ! Status.Failure(new IllegalStateException("endpoint offline"))
-        else endpointActorRef.foreach(_.forward(m))
+      case GetRequest(_) =>
+        sender() ! Status.Failure(new IllegalStateException("endpoint offline"))
+    }
+
+    def online: Receive = {
+      case ActorIdentity(`identityId`, None) =>
+        endpointActorRef = None
+        context.unbecome()
+
+      case ReqOnline =>
+        sender() ! Online
+
+      case m @ SetRequest(_,_) =>
+        endpointActorRef.foreach(_.forward(m))
+
+      case m @ GetRequest(_) =>
+        endpointActorRef.foreach(_.forward(m))
     }
 
   }
