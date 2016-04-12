@@ -12,10 +12,6 @@ final class AkkaDBActor extends Actor {
   def map = map_
 
   override def receive = {
-    case Ping =>
-      log.info(s"received ping")
-      sender() ! Connect
-
     case SetRequest(key, value) =>
       log.info(s"received SetRequest - key: $key, value: $value")
       map += (key -> value)
