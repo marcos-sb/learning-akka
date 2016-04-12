@@ -82,12 +82,15 @@ class TestAkkaDBActor extends FunSuite
     output shouldEqual None
   }
 
-  test("Ping and Connect") {
+  test("Subscribe") {
     val actorRef = TestActorRef(new AkkaDBActor)
-    val clientProbe = TestProbe()
+    val subscriptor = TestProbe()
 
-    actorRef.receive(Ping, clientProbe.testActor)
+    actorRef.tell(Subscribe, subscriptor.ref)
 
-    clientProbe.expectMsgType[Connect.type]
+    subscriptor.expectMsgType[HeartBeat.type]
+    subscriptor.expectMsgType[HeartBeat.type]
+    subscriptor.expectMsgType[HeartBeat.type]
   }
+
 }

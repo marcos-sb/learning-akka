@@ -3,7 +3,8 @@ package com.marcos.sb.foo.db.akka.client
 import akka.actor._
 import akka.util.Timeout
 import akka.pattern.ask
-import com.marcos.sb.foo.db.akka.message.Messages.{GetRequest, SetRequest}
+import akka.event.Logging
+import com.marcos.sb.foo.db.akka.message.Messages.{GetRequest, SetRequest, Subscribe, HeartBeat}
 
 import scala.concurrent.duration._
 
@@ -22,6 +23,7 @@ final class Client(private val remoteAddr: String)(implicit val system: ActorSys
     private val remoteAddr: String
   ) extends Actor {
 
+    private val log = Logging(context.system,this)
     private var endpointActorRef: Option[ActorRef] = None
     private val identityId = 1
 
@@ -45,9 +47,17 @@ final class Client(private val remoteAddr: String)(implicit val system: ActorSys
 
       case GetRequest(_) =>
         sender() ! Status.Failure(new IllegalStateException("endpoint offline"))
+
+      case _ =>
     }
 
     def online: Receive = {
+      case HeartBeat =>
+        log.info(s"received HeartBeat from ${sender()}")
+
+      case Subscribe =>
+        endpointActorRef.foreach(_ ! Subscribe)
+
       case ActorIdentity(`identityId`, None) =>
         endpointActorRef = None
         context.unbecome()
@@ -60,6 +70,8 @@ final class Client(private val remoteAddr: String)(implicit val system: ActorSys
 
       case m @ GetRequest(_) =>
         endpointActorRef.foreach(_.forward(m))
+
+      case _ =>
     }
 
   }
@@ -74,6 +86,8 @@ final class Client(private val remoteAddr: String)(implicit val system: ActorSys
     case Online => true
     case Offline => false
   }
+
+  def subscribe = clientActor ! Subscribe
 
   def set(key: String, value: Any) = {
     clientActor ? SetRequest(key, value)

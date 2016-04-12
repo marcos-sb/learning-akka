@@ -4,6 +4,7 @@ import akka.actor.{Props, ActorSystem, Actor, Status}
 import akka.event.Logging
 import com.marcos.sb.foo.db.akka.message.Messages._
 import scala.collection.mutable
+import scala.concurrent.duration._
 
 final class AkkaDBActor extends Actor {
   private val map_ = new mutable.HashMap[String, Any]
@@ -12,6 +13,12 @@ final class AkkaDBActor extends Actor {
   def map = map_
 
   override def receive = {
+    case Subscribe =>
+      val sender = this.sender()
+      log.info(s"received Subscribe request from $sender")
+      context.system.scheduler.schedule(0.milliseconds,
+        2.seconds, sender, HeartBeat)(context.system.dispatcher, self)
+
     case SetRequest(key, value) =>
       log.info(s"received SetRequest - key: $key, value: $value")
       map += (key -> value)
