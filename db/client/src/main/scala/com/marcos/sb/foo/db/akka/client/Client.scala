@@ -4,7 +4,7 @@ import akka.actor._
 import akka.util.Timeout
 import akka.pattern.ask
 import akka.event.Logging
-import com.marcos.sb.foo.db.akka.message.Messages.{GetRequest, SetRequest, Subscribe, HeartBeat}
+import com.marcos.sb.foo.db.akka.message.Messages._
 
 import scala.concurrent.duration._
 
@@ -15,64 +15,81 @@ private object ClientPrivateMessages {
 }
 
 
-final class Client(private val remoteAddr: String)(implicit val system: ActorSystem) {
+final class Client(
+  private val remoteAddr: String,
+  private val bunchSz: Int = 3)
+  (implicit val system: ActorSystem) {
 
   import ClientPrivateMessages._
 
+  sealed trait State
+  case object Disconnected extends State
+  case object Connected extends State
+
+  sealed trait Data
+  case object Empty extends Data
+  sealed case class Pending(reqs: List[Request], backend: ActorRef) extends Data
+
   sealed class ClientActor(
     private val remoteAddr: String
-  ) extends Actor {
+  ) extends FSM[State, Data] {
 
-    private val log = Logging(context.system,this)
-    private var endpointActorRef: Option[ActorRef] = None
     private val identityId = 1
 
-    override def preStart = {
+    override def preStart() = {
       context.actorSelection(remoteAddr) ! Identify(identityId)
     }
 
-    override def receive = {
-      case ActorIdentity(`identityId`, Some(ref)) =>
-        endpointActorRef = Some(ref)
-        context.become(online)
+    startWith(Disconnected, Empty)
 
-      case ActorIdentity(`identityId`, None) =>
-        endpointActorRef = None
+    when(Disconnected) {
+      case Event(ActorIdentity(`identityId`, Some(ref)), _) =>
+        goto(Connected) using Pending(List.empty[Request], ref)
 
-      case ReqOnline =>
+      case Event(ActorIdentity(`identityId`, None), _) =>
+        stay
+
+      case Event(req: Request, _) =>
+        sender() ! Status.Failure(new IllegalStateException("endpoint offline"))
+        stay
+
+      case Event(ReqOnline, _) =>
         sender() ! Offline
-
-      case SetRequest(_, _) =>
-        sender() ! Status.Failure(new IllegalStateException("endpoint offline"))
-
-      case GetRequest(_) =>
-        sender() ! Status.Failure(new IllegalStateException("endpoint offline"))
+        stay
 
       case _ =>
+        log.error(s"received msg while $Disconnected")
+        stay
     }
 
-    def online: Receive = {
-      case HeartBeat =>
-        log.info(s"received HeartBeat from ${sender()}")
+    when(Connected) {
+      case Event(req: Request, Pending(l, ref)) =>
+        if(l.size < bunchSz)
+          stay using Pending(req :: l, ref) replying Status.Success
+        else {
+          for(req_ <- l.reverse) ref.forward(req_)
+          ref.forward(req)
+          stay using Pending(List.empty[Request], ref)
+        }
 
-      case Subscribe =>
-        endpointActorRef.foreach(_ ! Subscribe)
+      case Event(s @ Subscribe, p @ Pending(_, ref)) => // subscribe is not buffered but sent right away
+        ref ! s
+        stay
 
-      case ActorIdentity(`identityId`, None) =>
-        endpointActorRef = None
-        context.unbecome()
+      case Event(HeartBeat, _) =>
+        log.info(s"received heartbeat from ${sender()}")
+        stay
 
-      case ReqOnline =>
+      case Event(ReqOnline, _) =>
         sender() ! Online
-
-      case m @ SetRequest(_,_) =>
-        endpointActorRef.foreach(_.forward(m))
-
-      case m @ GetRequest(_) =>
-        endpointActorRef.foreach(_.forward(m))
+        stay
 
       case _ =>
+        log.error(s"received unknown msg while $Online")
+        stay
     }
+
+    initialize()
 
   }
 
@@ -87,7 +104,7 @@ final class Client(private val remoteAddr: String)(implicit val system: ActorSys
     case Offline => false
   }
 
-  def subscribe = clientActor ! Subscribe
+  def subscribe() = clientActor ! Subscribe
 
   def set(key: String, value: Any) = {
     clientActor ? SetRequest(key, value)
