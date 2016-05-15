@@ -2,7 +2,7 @@ package com.marcos.sb.foo.db.akka.client
 
 import org.scalatest.{FunSpec, Matchers}
 import akka.testkit.TestProbe
-import akka.actor.{Identify, ActorIdentity, ActorSystem, Status}
+import akka.actor.{ActorSystem, Status}
 import scala.concurrent.Await
 import scala.concurrent.duration._
 import com.marcos.sb.foo.db.akka.message.Messages._
