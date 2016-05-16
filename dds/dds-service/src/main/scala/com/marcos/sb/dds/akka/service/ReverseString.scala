@@ -4,7 +4,7 @@ import akka.actor.{Actor, Status}
 import akka.event.Logging
 import com.marcos.sb.dds.akka.message.Message._
 
-final class ReverseStringActor extends Actor {
+final class ReverseString extends Actor {
   val logger = Logging(context.system, this)
 
   override def receive = {
